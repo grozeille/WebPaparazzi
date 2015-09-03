@@ -219,9 +219,11 @@ namespace WebPaparazzi
                     long beginTime = Convert.ToInt64((DateTime.Now - epoch).TotalMilliseconds);
                     long endTime = 0;
                     MemoryStream img = null;
-                    
+
+                    //Boolean isNew = false;
                     while(true)
                     {
+                        //isNew = true;
                         _ImageLock.AcquireReaderLock(100);
                         try
                         {
@@ -244,9 +246,15 @@ namespace WebPaparazzi
                         {
                             // wait for ~60fps
                             //Thread.Sleep(17);
-                            Thread.Sleep(1000);
-                            img.Seek(0, SeekOrigin.Begin);
-                            wr.Write(img);                      
+                            // wait for 25fps
+                            Thread.Sleep(40);
+                            //Thread.Sleep(1000);
+                            //if (isNew)
+                            //{
+                                img.Seek(0, SeekOrigin.Begin);
+                                wr.Write(img);
+                                //isNew = false;
+                            //}                            
 
                         } while (Convert.ToInt64((DateTime.Now - epoch).TotalMilliseconds) < endTime);
                     }

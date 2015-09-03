@@ -21,5 +21,7 @@ namespace WebPaparazzi
         public static extern bool DeleteObject(IntPtr hObject);
         [DllImport("gdi32.dll")]
         public static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr CreateRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect);
     }
 }

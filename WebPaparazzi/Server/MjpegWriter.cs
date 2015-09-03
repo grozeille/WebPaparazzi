@@ -75,7 +75,8 @@ namespace WebPaparazzi
 
         public void Write(MemoryStream imageStream)
         {
-            lastBuffer.Seek(0, SeekOrigin.Begin);
+            lastBuffer = imageStream;
+            imageStream.Seek(0, SeekOrigin.Begin);
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine();
@@ -108,7 +109,7 @@ namespace WebPaparazzi
             return Encoding.ASCII.GetBytes(text);
         }
 
-        private static MemoryStream BytesOf(Image image)
+        public static MemoryStream BytesOf(Image image)
         {
             MemoryStream ms = new MemoryStream();
 
@@ -128,7 +129,6 @@ namespace WebPaparazzi
             myEncoderParameters.Param[0] = myEncoderParameter;
 
             image.Save(ms, jpgEncoder, myEncoderParameters);
-            image.Save("c:\\toto.jpg", jpgEncoder, myEncoderParameters);
             return ms;
         }
 

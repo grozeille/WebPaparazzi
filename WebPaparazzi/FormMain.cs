@@ -84,6 +84,7 @@ namespace WebPaparazzi
                 if (cptTab >= this.tabControl.TabPages.Count)
                 {
                     cptTab = 0;
+                    //this.tabControl.InvokeOnUiThreadIfRequired(() => this.tabControl.SelectedIndex = cptTab);
                 }
 
                 var webPage = (UserControlWebPage)this.tabControl.TabPages[cptTab].Controls[0];
@@ -95,6 +96,7 @@ namespace WebPaparazzi
                 {
                     cptTab = 0;
                 }
+                //this.tabControl.InvokeOnUiThreadIfRequired(() => this.tabControl.SelectedIndex = cptTab);
             }
         }
 
@@ -130,9 +132,13 @@ namespace WebPaparazzi
             UserControlWebPage webPage = new UserControlWebPage(url, frequencyMillis);            
             page.Controls.Add(webPage);
             webPage.Dock = DockStyle.Fill;
+            webPage.OnPageLoad += (e, a) =>
+            {
+                page.InvokeOnUiThreadIfRequired(() => page.Text = a.Title.Substring(0, (a.Title.Length > 20 ? 20 : a.Title.Length)) + (a.Title.Length > 20 ? "..." : ""));
+            };
             this.tabControl.TabPages.Add(page);
         }
-
+        
         private void LoadSettings()
         {
             var parentFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WebPaparazzi");

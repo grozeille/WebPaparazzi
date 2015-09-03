@@ -20,9 +20,13 @@ namespace WebPaparazzi
     {
         private ChromiumWebBrowser _browser;
 
+        private CefSharp.OffScreen.ChromiumWebBrowser _offScreenBrowser;
+
         public String Url { get; private set; }
 
         public int Frequency { get; private set; }
+
+        public event EventHandler<TitleEventArgs> OnPageLoad;
 
         public UserControlWebPage()
         {
@@ -32,10 +36,18 @@ namespace WebPaparazzi
             {
                 Dock = DockStyle.Fill
             };
+            _offScreenBrowser = new CefSharp.OffScreen.ChromiumWebBrowser("");
+            _offScreenBrowser.Size = new Size(1920, 1080);
 
             this.panelBrowser.Controls.Add(_browser);
             _browser.AddressChanged += OnBrowserAddressChanged;
             _browser.FrameLoadEnd += browser_FrameLoadEnd;
+            _browser.IsBrowserInitializedChanged += _browser_IsBrowserInitializedChanged;
+        }
+
+        private void _browser_IsBrowserInitializedChanged(object sender, IsBrowserInitializedChangedEventArgs e)
+        {
+            this._browser.Load(this.textBoxUrl.Text);
         }
 
         public UserControlWebPage(String url, Int32? frequencyMillis):this()
@@ -52,7 +64,10 @@ namespace WebPaparazzi
         {
             if (e.IsMainFrame)
             {
-                
+                if (OnPageLoad != null)
+                {
+                    OnPageLoad(this, new TitleEventArgs(_browser.Title));
+                }
             }
         }
 
@@ -69,24 +84,40 @@ namespace WebPaparazzi
             this._browser.Load(this.textBoxUrl.Text);
         }
 
-        private void Screenshot(String path, Boolean refresh, int waitBeforeScreenshot)
+        public void Screenshot(String path, Boolean refresh, int waitBeforeScreenshot)
         {
             Image img = Screenshot(refresh, waitBeforeScreenshot);
             ImageFormat format = ImageFormat.Png;
             if (path.EndsWith(".png"))
             {
                 format = ImageFormat.Png;
+                img.Save(path, format);
             }
             else if (path.EndsWith(".bmp"))
             {
                 format = ImageFormat.Bmp;
+                img.Save(path, format);
             }
             else if (path.EndsWith(".jpg"))
             {
-                format = ImageFormat.Jpeg;
-            }
-            img.Save(path, format);
+                ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
 
+                // Create an Encoder object based on the GUID
+                // for the Quality parameter category.
+                System.Drawing.Imaging.Encoder myEncoder = System.Drawing.Imaging.Encoder.Quality;
+
+                // Create an EncoderParameters object.
+                // An EncoderParameters object has an array of EncoderParameter
+                // objects. In this case, there is only one
+                // EncoderParameter object in the array.
+                EncoderParameters myEncoderParameters = new EncoderParameters(1);
+
+                EncoderParameter myEncoderParameter = new EncoderParameter(myEncoder, 100L);
+                myEncoderParameters.Param[0] = myEncoderParameter;
+
+                img.Save(path, jpgEncoder, myEncoderParameters);
+            }
+            
 
             /*using (Bitmap bmp = new Bitmap(this.webBrowser.Width, this.webBrowser.Height))
             {
@@ -108,6 +139,21 @@ namespace WebPaparazzi
             }*/
         }
 
+        private static ImageCodecInfo GetEncoder(ImageFormat format)
+        {
+
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
+
+            foreach (ImageCodecInfo codec in codecs)
+            {
+                if (codec.FormatID == format.Guid)
+                {
+                    return codec;
+                }
+            }
+            return null;
+        }
+
         private void buttonTest_Click(object sender, EventArgs e)
         {
             Screenshot(this.textBoxImgPath.Text, true, 3 * 1000);
@@ -115,7 +161,7 @@ namespace WebPaparazzi
 
         private void UserControlWebPage_Load(object sender, EventArgs e)
         {
-            this._browser.Load(this.textBoxUrl.Text);
+            
         }
 
         private void textBoxFrequence_TextChanged(object sender, EventArgs e)
@@ -142,28 +188,39 @@ namespace WebPaparazzi
 
         public Image Screenshot(Boolean refresh, int waitBeforeScreenshot)
         {
-            return this.InvokeOnUiThreadIfRequired<Image>(() =>
+            ManualResetEvent loadComplete = new ManualResetEvent(false);
+            EventHandler<FrameLoadEndEventArgs> onFrameLoadedEnd = new EventHandler<FrameLoadEndEventArgs>((o, e) =>
             {
+                if (e.IsMainFrame)
+                {
+                    loadComplete.Set();
+                }
+            });
 
+            this.InvokeOnUiThreadIfRequired(() =>
+            {
                 if (refresh)
                 {
-                    ManualResetEvent loadComplete = new ManualResetEvent(false);
-                    EventHandler<FrameLoadEndEventArgs> onFrameLoadedEnd = new EventHandler<FrameLoadEndEventArgs>((o, e) =>
-                    {
-                        if (e.IsMainFrame)
-                        {
-                            loadComplete.Set();
-                        }
-                    });
-                    this._browser.FrameLoadEnd += onFrameLoadedEnd;
-                    this._browser.Reload(true);
+                    this._offScreenBrowser.FrameLoadEnd += onFrameLoadedEnd;
+                    this._offScreenBrowser.Load(this._browser.Address);
 
-                    loadComplete.WaitOne(TimeSpan.FromSeconds(30));
-                    this._browser.FrameLoadEnd -= onFrameLoadedEnd;
-                    Thread.Sleep(waitBeforeScreenshot);
+                    //this._browser.FrameLoadEnd += onFrameLoadedEnd;
+                    //this._browser.Reload(true);                    
                 }
+            });
 
-                return this._browser.DrawToImage();
+            if(refresh)
+            {
+                loadComplete.WaitOne(TimeSpan.FromSeconds(30));
+                //this._browser.FrameLoadEnd -= onFrameLoadedEnd;
+                this._offScreenBrowser.FrameLoadEnd -= onFrameLoadedEnd;
+                Thread.Sleep(waitBeforeScreenshot);
+            }
+
+            return this.InvokeOnUiThreadIfRequired<Image>(() =>
+            {
+                //return this._browser.DrawToImage();                
+                return this._offScreenBrowser.ScreenshotOrNull();
             });
         }
 

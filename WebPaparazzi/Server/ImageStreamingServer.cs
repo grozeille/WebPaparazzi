@@ -24,9 +24,16 @@ namespace WebPaparazzi
     /// </summary>
     public class ImageStreamingServer:IDisposable
     {
+        private static DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private List<Socket> _Clients;
+        private Socket _Server;
         private Thread _Thread;
+        private Thread _Thread_Render;
+        private byte[] _CurrentImage;
+        private long _CurrentImageEnd;
+
+        private ReaderWriterLock _ImageLock = new ReaderWriterLock();
 
         public ImageStreamingServer():this(Screen.Snapshots(600,450,true, 3))
         {
@@ -38,6 +45,7 @@ namespace WebPaparazzi
 
             _Clients = new List<Socket>();
             _Thread = null;
+            _Thread_Render = null;
 
             this.ImagesSource = imagesSource;
 
@@ -71,8 +79,15 @@ namespace WebPaparazzi
             lock (this)
             {
                 _Thread = new Thread(new ParameterizedThreadStart(ServerThread));
+                _Thread.Name = "MjpegServerThread";
                 _Thread.IsBackground = true;
                 _Thread.Start(port);
+
+
+                _Thread_Render = new Thread(new ParameterizedThreadStart(RenderThread));
+                _Thread_Render.Name = "RenderThread";
+                _Thread_Render.IsBackground = true;
+                _Thread_Render.Start();
             }
 
         }
@@ -92,8 +107,9 @@ namespace WebPaparazzi
             {
                 try
                 {
-                    _Thread.Join();
+                    _Server.Close();
                     _Thread.Abort();
+                    _Thread_Render.Abort();
                 }
                 finally
                 {
@@ -114,6 +130,7 @@ namespace WebPaparazzi
                     }
 
                     _Thread = null;
+                    _Thread_Render = null;
                 }
             }
         }
@@ -128,20 +145,48 @@ namespace WebPaparazzi
 
             try
             {
-                Socket Server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                _Server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-                Server.Bind(new IPEndPoint(IPAddress.Any,(int)state));
-                Server.Listen(10);
+                _Server.Bind(new IPEndPoint(IPAddress.Any, (int)state));
+                _Server.Listen(10);
 
                 System.Diagnostics.Debug.WriteLine(string.Format("Server started on port {0}.", state));
-                
-                foreach (Socket client in Server.IncommingConnectoins())
+
+                foreach (Socket client in _Server.IncommingConnections())
+                {
                     ThreadPool.QueueUserWorkItem(new WaitCallback(ClientThread), client);
+                }                    
             
             }
             catch { }
 
             this.Stop();
+        }
+        
+        private void RenderThread(object state)
+        {
+            // while there's an image...
+            foreach (var img in this.ImagesSource)
+            {
+                _ImageLock.AcquireWriterLock(img.TimeInMilliseconds);
+                try
+                {
+                    if (img.Image == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine("No screenshot!");
+                    }
+                    else
+                    {
+                        _CurrentImage = MjpegWriter.BytesOf(img.Image).ToArray();
+                        _CurrentImageEnd = Convert.ToInt64((DateTime.Now - epoch).TotalMilliseconds) + img.TimeInMilliseconds;
+                    }
+                }
+                finally
+                {
+                    _ImageLock.ReleaseWriterLock();
+                }
+                Thread.Sleep(img.TimeInMilliseconds);
+            }            
         }
 
         /// <summary>
@@ -149,9 +194,14 @@ namespace WebPaparazzi
         /// </summary>
         /// <param name="client"></param>
         private void ClientThread(object client)
-        {
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        {            
             Socket socket = (Socket)client;
+            IPEndPoint remoteIpEndPoint = socket.RemoteEndPoint as IPEndPoint;
+            if (remoteIpEndPoint != null)
+            {
+                Thread.CurrentThread.Name = "ClientThread_"+remoteIpEndPoint.Address;
+            }            
+
             
             System.Diagnostics.Debug.WriteLine(string.Format("New client from {0}",socket.RemoteEndPoint.ToString()));
 
@@ -167,40 +217,45 @@ namespace WebPaparazzi
                     wr.WriteHeader();
 
                     long beginTime = Convert.ToInt64((DateTime.Now - epoch).TotalMilliseconds);
-                    var enumerator = this.ImagesSource.GetEnumerator();
-                    if(enumerator.MoveNext())
+                    long endTime = 0;
+                    MemoryStream img = null;
+                    
+                    while(true)
                     {
-                        var img = enumerator.Current;
-                        //wr.Write(img.Image);
+                        _ImageLock.AcquireReaderLock(100);
+                        try
+                        {
+                            if (_CurrentImage != null)
+                            {
+                                img = new MemoryStream(_CurrentImage);
+                            }
+                            else
+                            {
+                                img = new MemoryStream(new byte[0]);
+                            }
+                            endTime = _CurrentImageEnd;
+                        }
+                        finally
+                        {
+                            _ImageLock.ReleaseReaderLock();
+                        }
 
-                        // Streams the images from the source to the client.
                         do
                         {
                             // wait for ~60fps
-                            Thread.Sleep(17);
-                            //wr.Write();
-                            wr.Write(img.Image);
-                            
+                            //Thread.Sleep(17);
+                            Thread.Sleep(1000);
+                            img.Seek(0, SeekOrigin.Begin);
+                            wr.Write(img);                      
 
-                            if (Convert.ToInt64((DateTime.Now - epoch).TotalMilliseconds) >= beginTime + img.TimeInMilliseconds)
-                            {
-                                beginTime = Convert.ToInt64((DateTime.Now - epoch).TotalMilliseconds);
-                                if (enumerator.MoveNext())
-                                {
-                                    
-                                    img = enumerator.Current;
-                                    //wr.Write(img.Image);
-                                }
-                            }
-
-                        }while(img != null);
+                        } while (Convert.ToInt64((DateTime.Now - epoch).TotalMilliseconds) < endTime);
                     }
 
                 }
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e.ToString());
+                System.Diagnostics.Debug.WriteLine(e.ToString());
             }
             finally
             {
@@ -223,10 +278,13 @@ namespace WebPaparazzi
     static class SocketExtensions
     {
 
-        public static IEnumerable<Socket> IncommingConnectoins(this Socket server)
+        public static IEnumerable<Socket> IncommingConnections(this Socket server)
         {
             while(true)
-                yield return server.Accept();
+            {
+                Socket s = server.Accept();
+                yield return s;
+            }                
         }
 
     }

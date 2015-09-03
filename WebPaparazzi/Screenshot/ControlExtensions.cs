@@ -12,7 +12,9 @@ namespace WebPaparazzi
     {
         public static Image DrawToImage(this Control control)
         {
-            return Utilities.CaptureWindow(control.Handle);
+            //return Utilities.CaptureWindow(control.Handle);
+            //return Utilities.PrintWindow(control.Handle);
+            return Utilities.Snapshot(control);
         }
 
         /// <summary>

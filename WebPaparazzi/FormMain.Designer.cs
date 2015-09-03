@@ -35,9 +35,9 @@
             this.toolStripButtonSave = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonStart = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonStop = new System.Windows.Forms.ToolStripButton();
-            this.tabControl = new System.Windows.Forms.TabControl();
-            this.toolStripTextBoxPort = new System.Windows.Forms.ToolStripTextBox();
             this.toolStripLabelPort = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripTextBoxPort = new System.Windows.Forms.ToolStripTextBox();
+            this.tabControl = new System.Windows.Forms.TabControl();
             this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -103,6 +103,18 @@
             this.toolStripButtonStop.Text = "Stop";
             this.toolStripButtonStop.Click += new System.EventHandler(this.toolStripButtonStop_Click);
             // 
+            // toolStripLabelPort
+            // 
+            this.toolStripLabelPort.Name = "toolStripLabelPort";
+            this.toolStripLabelPort.Size = new System.Drawing.Size(32, 22);
+            this.toolStripLabelPort.Text = "port:";
+            // 
+            // toolStripTextBoxPort
+            // 
+            this.toolStripTextBoxPort.Name = "toolStripTextBoxPort";
+            this.toolStripTextBoxPort.Size = new System.Drawing.Size(100, 25);
+            this.toolStripTextBoxPort.Text = "8080";
+            // 
             // tabControl
             // 
             this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -111,18 +123,6 @@
             this.tabControl.SelectedIndex = 0;
             this.tabControl.Size = new System.Drawing.Size(754, 412);
             this.tabControl.TabIndex = 2;
-            // 
-            // toolStripTextBoxPort
-            // 
-            this.toolStripTextBoxPort.Name = "toolStripTextBoxPort";
-            this.toolStripTextBoxPort.Size = new System.Drawing.Size(100, 25);
-            this.toolStripTextBoxPort.Text = "8080";
-            // 
-            // toolStripLabelPort
-            // 
-            this.toolStripLabelPort.Name = "toolStripLabelPort";
-            this.toolStripLabelPort.Size = new System.Drawing.Size(32, 22);
-            this.toolStripLabelPort.Text = "port:";
             // 
             // FormMain
             // 

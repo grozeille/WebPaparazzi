@@ -8,6 +8,10 @@ namespace WebPaparazzi.Model
 {
     public class PaparazziSettings
     {
+        public int Port { get; set; }
+
+        public PaparazziResolution Resolution { get; set; }
+
         public PaparazziTabSetting[] Settings { get; set; }
     }
 }

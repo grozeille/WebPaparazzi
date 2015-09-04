@@ -13,6 +13,7 @@ using Microsoft.Win32;
 using System.Threading;
 using CefSharp;
 using CefSharp.WinForms;
+using WebPaparazzi.Model;
 
 namespace WebPaparazzi
 {
@@ -26,6 +27,17 @@ namespace WebPaparazzi
 
         public int Frequency { get; private set; }
 
+        public Size BrowserSize
+        {
+            set
+            {
+                this.InvokeOnUiThreadIfRequired(() => 
+                    {
+                        _offScreenBrowser.Size = value;
+                    });                
+            }
+        }
+
         public event EventHandler<TitleEventArgs> OnPageLoad;
 
         public UserControlWebPage()
@@ -37,7 +49,7 @@ namespace WebPaparazzi
                 Dock = DockStyle.Fill
             };
             _offScreenBrowser = new CefSharp.OffScreen.ChromiumWebBrowser("");
-            _offScreenBrowser.Size = new Size(1920, 1080);
+            _offScreenBrowser.Size = PaparazziResolutionConverter.DefaultSize;
 
             this.panelBrowser.Controls.Add(_browser);
             _browser.AddressChanged += OnBrowserAddressChanged;

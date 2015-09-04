@@ -114,6 +114,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Model\PaparazziResolution.cs" />
+    <Compile Include="Model\PaparazziResolutionConverter.cs" />
     <Compile Include="Screenshot\ApiConstants.cs" />
     <Compile Include="Server\ImageStreamingServer.cs" />
     <Compile Include="Server\MjpegWriter.cs" />

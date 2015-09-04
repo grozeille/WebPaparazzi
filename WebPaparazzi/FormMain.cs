@@ -113,6 +113,8 @@ namespace WebPaparazzi
                 settings.Add(setting);
             }
             PaparazziSettings settingsObject = new PaparazziSettings();
+            settingsObject.Port = Int32.Parse(this.toolStripTextBoxPort.Text);
+            settingsObject.Resolution = PaparazziResolutionConverter.FromString(this.toolStripComboBoxResolution.Text);
             settingsObject.Settings = settings.ToArray();
             String json = Newtonsoft.Json.JsonConvert.SerializeObject(settingsObject);
 
@@ -129,7 +131,8 @@ namespace WebPaparazzi
         private void AddPage(String url, Int32? frequencyMillis)
         {
             TabPage page = new TabPage("");
-            UserControlWebPage webPage = new UserControlWebPage(url, frequencyMillis);            
+            UserControlWebPage webPage = new UserControlWebPage(url, frequencyMillis);
+            webPage.BrowserSize = PaparazziResolutionConverter.ToSize(PaparazziResolutionConverter.FromString(this.toolStripComboBoxResolution.Text));
             page.Controls.Add(webPage);
             webPage.Dock = DockStyle.Fill;
             webPage.OnPageLoad += (e, a) =>
@@ -154,7 +157,24 @@ namespace WebPaparazzi
                     {
                         AddPage(item.Url, item.RereshTimeInMillisec);
                     }
+
+                    this.toolStripTextBoxPort.Text = settingsObject.Port.ToString();
+                    this.toolStripComboBoxResolution.Text = PaparazziResolutionConverter.ToString(settingsObject.Resolution);
                 }
+            }
+        }
+
+        private void toolStripComboBoxResolution_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void toolStripComboBoxResolution_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            foreach (TabPage tab in this.tabControl.TabPages)
+            {
+                var webPageControl = ((UserControlWebPage)tab.Controls[0]);
+                webPageControl.BrowserSize = PaparazziResolutionConverter.ToSize(PaparazziResolutionConverter.FromString(this.toolStripComboBoxResolution.Text));
             }
         }
 

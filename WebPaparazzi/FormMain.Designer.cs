@@ -37,6 +37,8 @@
             this.toolStripButtonStop = new System.Windows.Forms.ToolStripButton();
             this.toolStripLabelPort = new System.Windows.Forms.ToolStripLabel();
             this.toolStripTextBoxPort = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripLabelResolution = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripComboBoxResolution = new System.Windows.Forms.ToolStripComboBox();
             this.tabControl = new System.Windows.Forms.TabControl();
             this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -50,7 +52,9 @@
             this.toolStripButtonStart,
             this.toolStripButtonStop,
             this.toolStripLabelPort,
-            this.toolStripTextBoxPort});
+            this.toolStripTextBoxPort,
+            this.toolStripLabelResolution,
+            this.toolStripComboBoxResolution});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(754, 25);
@@ -115,6 +119,23 @@
             this.toolStripTextBoxPort.Size = new System.Drawing.Size(100, 25);
             this.toolStripTextBoxPort.Text = "8080";
             // 
+            // toolStripLabelResolution
+            // 
+            this.toolStripLabelResolution.Name = "toolStripLabelResolution";
+            this.toolStripLabelResolution.Size = new System.Drawing.Size(66, 22);
+            this.toolStripLabelResolution.Text = "Résolution:";
+            // 
+            // toolStripComboBoxResolution
+            // 
+            this.toolStripComboBoxResolution.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.toolStripComboBoxResolution.Items.AddRange(new object[] {
+            "1080p",
+            "720p",
+            "1024x768"});
+            this.toolStripComboBoxResolution.Name = "toolStripComboBoxResolution";
+            this.toolStripComboBoxResolution.Size = new System.Drawing.Size(121, 25);
+            this.toolStripComboBoxResolution.SelectedIndexChanged += new System.EventHandler(this.toolStripComboBoxResolution_SelectedIndexChanged);
+            // 
             // tabControl
             // 
             this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -153,6 +174,8 @@
         private System.Windows.Forms.ToolStripButton toolStripButtonStop;
         private System.Windows.Forms.ToolStripLabel toolStripLabelPort;
         private System.Windows.Forms.ToolStripTextBox toolStripTextBoxPort;
+        private System.Windows.Forms.ToolStripLabel toolStripLabelResolution;
+        private System.Windows.Forms.ToolStripComboBox toolStripComboBoxResolution;
 
     }
 }

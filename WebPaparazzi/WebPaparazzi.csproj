@@ -176,6 +176,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="paparazzi.ico" />
+    <EmbeddedResource Include="resize_image.js" />
     <None Include="Resources\stop.png" />
     <None Include="Resources\play2.png" />
     <None Include="Resources\plus.png" />

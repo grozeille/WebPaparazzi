@@ -14,6 +14,8 @@ using System.Threading;
 using CefSharp;
 using CefSharp.WinForms;
 using WebPaparazzi.Model;
+using System.Reflection;
+using System.IO;
 
 namespace WebPaparazzi
 {
@@ -22,6 +24,8 @@ namespace WebPaparazzi
         private ChromiumWebBrowser _browser;
 
         private CefSharp.OffScreen.ChromiumWebBrowser _offScreenBrowser;
+
+        private String _resize_script;
 
         public String Url { get; private set; }
 
@@ -44,25 +48,31 @@ namespace WebPaparazzi
         {
             InitializeComponent();
 
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = "WebPaparazzi.resize_image.js";
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                _resize_script = reader.ReadToEnd();
+            }
+
             _browser = new ChromiumWebBrowser("")
             {
                 Dock = DockStyle.Fill
             };
             _offScreenBrowser = new CefSharp.OffScreen.ChromiumWebBrowser("");
             _offScreenBrowser.Size = PaparazziResolutionConverter.DefaultSize;
+            _offScreenBrowser.FrameLoadEnd += offScreenBrowser_FrameLoadEnd;
 
             this.panelBrowser.Controls.Add(_browser);
             _browser.AddressChanged += OnBrowserAddressChanged;
             _browser.FrameLoadEnd += browser_FrameLoadEnd;
-            _browser.IsBrowserInitializedChanged += _browser_IsBrowserInitializedChanged;
+            _browser.IsBrowserInitializedChanged += browser_IsBrowserInitializedChanged;
         }
 
-        private void _browser_IsBrowserInitializedChanged(object sender, IsBrowserInitializedChangedEventArgs e)
-        {
-            this._browser.Load(this.textBoxUrl.Text);
-        }
-
-        public UserControlWebPage(String url, Int32? frequencyMillis):this()
+        public UserControlWebPage(String url, Int32? frequencyMillis)
+            : this()
         {
             this.Url = url;
             this.Frequency = frequencyMillis.HasValue ? frequencyMillis.Value / 1000 : 30;
@@ -72,6 +82,23 @@ namespace WebPaparazzi
 
         }
 
+        private void browser_IsBrowserInitializedChanged(object sender, IsBrowserInitializedChangedEventArgs e)
+        {
+            this._browser.Load(this.textBoxUrl.Text);
+        }
+
+        private void offScreenBrowser_FrameLoadEnd(object sender, FrameLoadEndEventArgs e)
+        {
+            if (e.IsMainFrame)
+            {
+                _offScreenBrowser.ExecuteScriptAsync("document.body.style.overflow = 'hidden';");
+                if (_offScreenBrowser.Address.EndsWith(".png") || _offScreenBrowser.Address.EndsWith(".jpg"))
+                {
+                    _offScreenBrowser.ExecuteScriptAsync(_resize_script);
+                }
+            }
+        }
+
         private void browser_FrameLoadEnd(object sender, FrameLoadEndEventArgs e)
         {
             if (e.IsMainFrame)
@@ -79,6 +106,10 @@ namespace WebPaparazzi
                 if (OnPageLoad != null)
                 {
                     OnPageLoad(this, new TitleEventArgs(_browser.Title));
+                }
+                if (_browser.Address.EndsWith(".png") || _browser.Address.EndsWith(".jpg"))
+                {
+                    _browser.ExecuteScriptAsync(_resize_script);
                 }
             }
         }

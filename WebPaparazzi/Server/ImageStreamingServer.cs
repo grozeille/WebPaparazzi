@@ -197,11 +197,7 @@ namespace WebPaparazzi
         {            
             Socket socket = (Socket)client;
             IPEndPoint remoteIpEndPoint = socket.RemoteEndPoint as IPEndPoint;
-            if (remoteIpEndPoint != null)
-            {
-                Thread.CurrentThread.Name = "ClientThread_"+remoteIpEndPoint.Address;
-            }            
-
+            
             
             System.Diagnostics.Debug.WriteLine(string.Format("New client from {0}",socket.RemoteEndPoint.ToString()));
 
@@ -210,6 +206,11 @@ namespace WebPaparazzi
 
             try
             {
+                if (!socket.Connected)
+                {
+                    throw new Exception("Socket disconnected from "+remoteIpEndPoint.Address);
+                }
+
                 using (MjpegWriter wr = new MjpegWriter(new NetworkStream(socket, true)))
                 {
 
@@ -248,6 +249,12 @@ namespace WebPaparazzi
                             //Thread.Sleep(17);
                             // wait for 25fps
                             Thread.Sleep(40);
+
+                            if (!socket.Connected)
+                            {
+                                throw new Exception("Socket disconnected from " + remoteIpEndPoint.Address);
+                            }
+
                             //Thread.Sleep(1000);
                             //if (isNew)
                             //{

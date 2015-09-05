@@ -54,7 +54,7 @@ namespace WebPaparazzi
 
             if (!_server.IsRunning)
             {
-                _server.Start(Int32.Parse(this.toolStripTextBoxPort.Text));
+                _server.Start(Int32.Parse(this.toolStripTextBoxPort.Text), PaparazziResolutionConverter.FromString(this.toolStripComboBoxResolution.Text));
             }
         }
 

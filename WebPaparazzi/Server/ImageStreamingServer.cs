@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
 using System.IO;
+using System.Text.RegularExpressions;
+using WebPaparazzi.Model;
 
 // -------------------------------------------------
 // Developed By : Ragheed Al-Tayeb
@@ -33,12 +35,11 @@ namespace WebPaparazzi
         private byte[] _CurrentImage;
         private long _CurrentImageEnd;
 
+        private PaparazziResolution _DefaultResolution;
+
+        private static Regex httpRequestPattern = new Regex("GET ([^ ]+) .*");
+
         private ReaderWriterLock _ImageLock = new ReaderWriterLock();
-
-        public ImageStreamingServer():this(Screen.Snapshots(600,450,true, 3))
-        {
-
-        }
 
         public ImageStreamingServer(IEnumerable<ImageWithTime> imagesSource)
         {
@@ -73,11 +74,13 @@ namespace WebPaparazzi
         /// Starts the server to accepts any new connections on the specified port.
         /// </summary>
         /// <param name="port"></param>
-        public void Start(int port)
+        public void Start(int port, PaparazziResolution resolution)
         {
 
             lock (this)
             {
+                _DefaultResolution = resolution;
+
                 _Thread = new Thread(new ParameterizedThreadStart(ServerThread));
                 _Thread.Name = "MjpegServerThread";
                 _Thread.IsBackground = true;
@@ -97,7 +100,7 @@ namespace WebPaparazzi
         /// </summary>
         public void Start()
         {
-            this.Start(8080);
+            this.Start(8080, PaparazziResolution.R_1080p);
         }
 
         public void Stop()
@@ -197,20 +200,40 @@ namespace WebPaparazzi
         {            
             Socket socket = (Socket)client;
             IPEndPoint remoteIpEndPoint = socket.RemoteEndPoint as IPEndPoint;
-            
+
             
             System.Diagnostics.Debug.WriteLine(string.Format("New client from {0}",socket.RemoteEndPoint.ToString()));
 
             lock (_Clients)
                 _Clients.Add(socket);
 
+
+            Byte[] receiveByte = new Byte[256];
+            string request = string.Empty;
+
+            Int32 bytes = socket.Receive(receiveByte, receiveByte.Length, 0);            
+            request += Encoding.ASCII.GetString(receiveByte, 0, bytes);
+
+            while (!request.Contains("\r\n\r\n") && bytes > 0)
+            {
+                bytes = socket.Receive(receiveByte, receiveByte.Length, 0);
+                request = request + Encoding.ASCII.GetString(receiveByte, 0, bytes);
+            }
+
+            Size outputSize = PaparazziResolutionConverter.ToSize(_DefaultResolution);
+            Match match = httpRequestPattern.Match(request.Split('\n', '\r')[0]);
+            if(match.Success)
+            {
+                String url = match.Groups[1].Value;
+                String[] urlParts = url.Split('/');
+                if(urlParts.Length > 1)
+                {
+                    outputSize = PaparazziResolutionConverter.ToSize(PaparazziResolutionConverter.FromString(urlParts[1], _DefaultResolution));
+                }
+            }
+
             try
             {
-                if (!socket.Connected)
-                {
-                    throw new Exception("Socket disconnected from "+remoteIpEndPoint.Address);
-                }
-
                 using (MjpegWriter wr = new MjpegWriter(new NetworkStream(socket, true)))
                 {
 
@@ -230,7 +253,10 @@ namespace WebPaparazzi
                         {
                             if (_CurrentImage != null)
                             {
-                                img = new MemoryStream(_CurrentImage);
+                                var originalImage = new Bitmap(new MemoryStream(_CurrentImage));
+                                var resizedImage = new Bitmap(originalImage, outputSize);
+                                
+                                img = new MemoryStream(MjpegWriter.BytesOf(resizedImage).ToArray());
                             }
                             else
                             {
@@ -249,11 +275,6 @@ namespace WebPaparazzi
                             //Thread.Sleep(17);
                             // wait for 25fps
                             Thread.Sleep(40);
-
-                            if (!socket.Connected)
-                            {
-                                throw new Exception("Socket disconnected from " + remoteIpEndPoint.Address);
-                            }
 
                             //Thread.Sleep(1000);
                             //if (isNew)

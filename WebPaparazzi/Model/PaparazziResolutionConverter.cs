@@ -10,16 +10,7 @@ namespace WebPaparazzi.Model
     {
         public static PaparazziResolution FromString(String s)
         {
-            if(s.Equals("720p"))
-            {
-                return PaparazziResolution.R_720p;
-            }
-            else if(s.Equals("1024x768"))
-            {
-                return PaparazziResolution.R_1024x768;
-            }
-
-            return PaparazziResolution.R_1080p;
+            return FromString(s, PaparazziResolution.R_1080p);
         }
 
         public static String ToString(PaparazziResolution r)
@@ -52,5 +43,24 @@ namespace WebPaparazzi.Model
 
         public static Size DefaultSize { get { return ToSize(PaparazziResolution.R_1080p); } }
 
+
+        public static PaparazziResolution FromString(string s, PaparazziResolution _DefaultResolution)
+        {
+            if (s.Equals("720p"))
+            {
+                return PaparazziResolution.R_720p;
+            }
+            else if (s.Equals("1080p"))
+            {
+                return PaparazziResolution.R_1080p;
+            }
+            else if (s.Equals("1024x768"))
+            {
+                return PaparazziResolution.R_1024x768;
+            }
+
+
+            return _DefaultResolution;
+        }
     }
 }

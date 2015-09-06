@@ -19,6 +19,7 @@ namespace WebPaparazzi
     public partial class FormMain : Form
     {
         private ImageStreamingServer _server;
+        //private ImageStreamingServer2 _server2;
 
         public FormMain()
         {
@@ -44,6 +45,7 @@ namespace WebPaparazzi
             LoadSettings();
 
             _server = new ImageStreamingServer(ImageStream());
+            //_server2 = new ImageStreamingServer2(ImageStream());
         }
 
         private void toolStripButtonStart_Click(object sender, EventArgs e)
@@ -54,6 +56,7 @@ namespace WebPaparazzi
 
             if (!_server.IsRunning)
             {
+                //_server2.Start(Int32.Parse(this.toolStripTextBoxPort.Text), PaparazziResolutionConverter.FromString(this.toolStripComboBoxResolution.Text));
                 _server.Start(Int32.Parse(this.toolStripTextBoxPort.Text), PaparazziResolutionConverter.FromString(this.toolStripComboBoxResolution.Text));
             }
         }
@@ -68,6 +71,7 @@ namespace WebPaparazzi
             {
                 _server.Stop();
             }
+            //_server2.Stop();
         }
 
         private void toolStripButtonSave_Click(object sender, EventArgs e)

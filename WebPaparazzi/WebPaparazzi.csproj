@@ -82,6 +82,12 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Autofac">
+      <HintPath>..\packages\Autofac.3.1.0\lib\net40\Autofac.dll</HintPath>
+    </Reference>
+    <Reference Include="Autofac.Integration.WebApi">
+      <HintPath>..\packages\Autofac.WebApi.3.1.0\lib\net40\Autofac.Integration.WebApi.dll</HintPath>
+    </Reference>
     <Reference Include="CefSharp, Version=41.0.1.0, Culture=neutral, PublicKeyToken=40c4b6fc221f4138, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\CefSharp.Common.41.0.1\CefSharp\x86\CefSharp.dll</HintPath>
@@ -104,6 +110,13 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="System.Net.Http.Formatting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Net.Http.WebRequest, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Web.Http.SelfHost, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -118,6 +131,7 @@
     <Compile Include="Model\PaparazziResolutionConverter.cs" />
     <Compile Include="Screenshot\ApiConstants.cs" />
     <Compile Include="Server\ImageStreamingServer.cs" />
+    <Compile Include="Server\ImageStreamingServer2.cs" />
     <Compile Include="Server\MjpegWriter.cs" />
     <Compile Include="Model\PaparazziSettings.cs" />
     <Compile Include="Model\PaparazziTabSetting.cs" />
@@ -139,6 +153,7 @@
     <Compile Include="Screenshot\RECT.cs" />
     <Compile Include="Screenshot\User32.cs" />
     <Compile Include="Server\ImageWithTime.cs" />
+    <Compile Include="Server\ScreenController.cs" />
     <Compile Include="TitleEventArgs.cs" />
     <Compile Include="UserControlWebPage.cs">
       <SubType>UserControl</SubType>
